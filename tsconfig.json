@@ -13,6 +13,7 @@
     "types": [
       "node"
     ],
+    "typeRoots": ["./node_modules/@types"]
     "moduleResolution": "bundler",
     "isolatedModules": true,
     "moduleDetection": "force",
@@ -22,10 +23,6 @@
       "@/*": [
         "./*"
       ]
-    },
-    "compilerOptions": {
-      "types": ["node"],
-      "typeRoots": ["./node_modules/@types"]
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
