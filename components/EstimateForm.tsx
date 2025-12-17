@@ -1170,7 +1170,7 @@ export const EstimateForm: React.FC<EstimateFormProps> = ({
                          </button>
                          
                          <div className="grid gap-3 pl-8">
-                            <div className="grid grid-cols-[1fr_80px] gap-2">
+                            <div className="grid grid-cols-1 gap-2">
                                  <div className="space-y-1">
                                     <Label className="text-xs text-slate-500 dark:text-slate-400">항목명</Label>
                                     <Input 
@@ -1179,17 +1179,7 @@ export const EstimateForm: React.FC<EstimateFormProps> = ({
                                         placeholder="예: 웹사이트 디자인"
                                     />
                                  </div>
-                                 <div className="flex items-end">
-                                    <Button 
-                                        variant="secondary"
-                                        className="w-full text-xs h-9 px-2 text-purple-600 bg-purple-50 hover:bg-purple-100 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-900 dark:hover:bg-purple-900/50"
-                                        onClick={() => handleAiDescription(item.id, item.name)}
-                                        disabled={!item.name || loadingItemId === item.id}
-                                        title="AI 설명 생성"
-                                    >
-                                        {loadingItemId === item.id ? <RefreshCw className="animate-spin w-4 h-4" /> : <Wand2 className="w-4 h-4" />}
-                                    </Button>
-                                 </div>
+                                 {/* AI 설명 생성 버튼 숨김 처리됨 */}
                             </div>
 
                             <div className="space-y-1">
@@ -1293,16 +1283,7 @@ export const EstimateForm: React.FC<EstimateFormProps> = ({
                     <FileText size={18} className="text-slate-500 dark:text-slate-400" />
                     <h3 className="font-bold text-sm uppercase tracking-wide">비고</h3>
                 </div>
-                <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={onGenerateNotes} 
-                    disabled={isGeneratingNotes}
-                    className="h-7 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300"
-                >
-                    {isGeneratingNotes ? <RefreshCw className="animate-spin mr-1 w-3 h-3" /> : <Wand2 className="mr-1 w-3 h-3" />}
-                    AI 자동작성
-                </Button>
+                {/* AI 자동작성 버튼 숨김 처리됨 */}
             </div>
             
             <div className="space-y-6">
