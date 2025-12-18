@@ -337,7 +337,6 @@ const App: React.FC = () => {
             <EstimateForm 
                 data={estimateData} 
                 onChange={handleDataChange} 
-                isGeneratingNotes={isGeneratingNotes}
                 theme={theme}
                 setTheme={setTheme}
             />
