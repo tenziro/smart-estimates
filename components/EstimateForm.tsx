@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Trash2, Wand2, RefreshCw, Upload, Image as ImageIcon, Settings, Type, Stamp, User, Briefcase, Calendar as CalendarIcon, FileText, Palette, Layout, GripVertical, ChevronLeft, ChevronRight, Grid, Move, Eye, Sun, Moon, Monitor, ArrowUpDown } from 'lucide-react';
+import { Plus, Trash2, Upload, Image as ImageIcon, Type, Stamp, User, Briefcase, Calendar as CalendarIcon, FileText, Palette, Layout, GripVertical, ChevronLeft, ChevronRight, Grid, Move, Eye, Sun, Moon, Monitor, ArrowUpDown } from 'lucide-react';
 import { EstimateData, LineItem, StyleConfig, EstimateLayout } from '../types';
-// import * as GeminiService from '../services/geminiService';
 import { format, addMonths, endOfMonth, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { clsx, type ClassValue } from "clsx";
@@ -213,8 +212,6 @@ const SectionHeader = ({ icon: Icon, title }: { icon: any, title: string }) => (
 interface EstimateFormProps {
   data: EstimateData;
   onChange: (data: EstimateData) => void;
-  onGenerateNotes: () => void;
-  isGeneratingNotes: boolean;
   theme: 'light' | 'dark' | 'system';
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
 }
@@ -222,13 +219,9 @@ interface EstimateFormProps {
 export const EstimateForm: React.FC<EstimateFormProps> = ({ 
   data, 
   onChange, 
-  onGenerateNotes, 
-  isGeneratingNotes,
   theme,
   setTheme
 }) => {
-
-  const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
   
   // Drag and Drop State
   const [dragItemIndex, setDragItemIndex] = useState<number | null>(null);
@@ -362,16 +355,6 @@ export const EstimateForm: React.FC<EstimateFormProps> = ({
       return item;
     });
     updateField('items', newItems);
-  };
-
-  const handleAiDescription = async (id: string, name: string) => {
-    if (!name) return;
-    setLoadingItemId(id);
-    {/* const desc = await GeminiService.enhanceItemDescription(name);
-    if (desc) {
-      updateItem(id, 'description', desc);
-    } */}
-    setLoadingItemId(null);
   };
 
   // DnD Handlers
@@ -1179,7 +1162,6 @@ export const EstimateForm: React.FC<EstimateFormProps> = ({
                                         placeholder="예: 웹사이트 디자인"
                                     />
                                  </div>
-                                 {/* AI 설명 생성 버튼 숨김 처리됨 */}
                             </div>
 
                             <div className="space-y-1">
@@ -1283,7 +1265,6 @@ export const EstimateForm: React.FC<EstimateFormProps> = ({
                     <FileText size={18} className="text-slate-500 dark:text-slate-400" />
                     <h3 className="font-bold text-sm uppercase tracking-wide">비고</h3>
                 </div>
-                {/* AI 자동작성 버튼 숨김 처리됨 */}
             </div>
             
             <div className="space-y-6">

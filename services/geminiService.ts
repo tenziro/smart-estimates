@@ -1,9 +1,11 @@
-import { GoogleGenAI } from "@google/genai";
+// import { GoogleGenAI } from "@google/genai";
 import { EstimateData } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Gemini API는 현재 사용하지 않으므로 주석 처리합니다.
+// const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const generateEstimateNotes = async (data: EstimateData): Promise<string> => {
+  /* AI 기능 비활성화됨
   try {
     const itemSummary = data.items.map(i => `${i.name} (${i.quantity}개)`).join(", ");
     
@@ -22,7 +24,7 @@ export const generateEstimateNotes = async (data: EstimateData): Promise<string>
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: prompt,
     });
 
@@ -31,9 +33,12 @@ export const generateEstimateNotes = async (data: EstimateData): Promise<string>
     console.error("Error generating notes:", error);
     return "견적에 문의사항이 있으시면 언제든지 연락 부탁드립니다. 감사합니다.";
   }
+  */
+  return "견적에 문의사항이 있으시면 언제든지 연락 부탁드립니다. 감사합니다.";
 };
 
 export const enhanceItemDescription = async (itemName: string): Promise<string> => {
+  /* AI 기능 비활성화됨
   try {
      const prompt = `
       '${itemName}'에 대한 짧고 전문적인 제품/서비스 설명을 한 문장으로 작성해주세요. 견적서의 품목 설명란에 들어갈 내용입니다.
@@ -41,7 +46,7 @@ export const enhanceItemDescription = async (itemName: string): Promise<string> 
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: prompt,
     });
     
@@ -50,4 +55,6 @@ export const enhanceItemDescription = async (itemName: string): Promise<string> 
     console.error("Error enhancing description:", error);
     return "";
   }
+  */
+  return "";
 }

@@ -3,7 +3,6 @@ import { EstimateForm } from './components/EstimateForm';
 import { EstimatePreview } from './components/EstimatePreview';
 import { EstimateData } from './types';
 import { Download, CloudUpload, Printer, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-// import * as GeminiService from './services/geminiService';
 import { downloadPDF, getPDFBlob } from './services/pdfService';
 import { getAccessToken, uploadPDFToDrive, pickFolder, isDriveConfigured } from './services/googleDriveService';
 import { Alert } from './components/ui/Alert';
@@ -157,7 +156,6 @@ const App: React.FC = () => {
     return initialData;
   });
 
-  const [isGeneratingNotes, setIsGeneratingNotes] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [driveFolderId, setDriveFolderId] = useState<string | null>(null);
@@ -217,13 +215,6 @@ const App: React.FC = () => {
   const handleDataChange = useCallback((newData: EstimateData) => {
     setEstimateData(newData);
   }, []);
-
-  // const handleGenerateNotes = async () => {
-  //   setIsGeneratingNotes(true);
-  //   const notes = await GeminiService.generateEstimateNotes(estimateData);
-  //   setEstimateData(prev => ({ ...prev, notes }));
-  //   setIsGeneratingNotes(false);
-  // };
 
   const getFileName = () => {
     return `${estimateData.title}_${estimateData.estimateNumber}_${estimateData.date}`;
@@ -326,14 +317,6 @@ const App: React.FC = () => {
         className={`w-full md:w-[480px] lg:w-[520px] bg-white h-auto md:h-screen md:sticky md:top-0 z-10 flex flex-col border-r border-gray-200 shadow-xl no-print transition-all duration-300 ${!isFormOpen ? 'hidden' : ''} ${isDark ? 'dark' : ''}`}
       >
          <div className="flex-1 overflow-hidden flex flex-col">
-            {/* <EstimateForm 
-                data={estimateData} 
-                onChange={handleDataChange} 
-                onGenerateNotes={handleGenerateNotes} 
-                isGeneratingNotes={isGeneratingNotes}
-                theme={theme}
-                setTheme={setTheme}
-            /> */}
             <EstimateForm 
                 data={estimateData} 
                 onChange={handleDataChange} 
