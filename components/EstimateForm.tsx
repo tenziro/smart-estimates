@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Trash2, Wand2, RefreshCw, Upload, Image as ImageIcon, Settings, Type, Stamp, User, Briefcase, Calendar as CalendarIcon, FileText, Palette, Layout, GripVertical, ChevronLeft, ChevronRight, Grid, Move, Eye, Sun, Moon, Monitor, ArrowUpDown } from 'lucide-react';
 import { EstimateData, LineItem, StyleConfig, EstimateLayout } from '../types';
-import * as GeminiService from '../services/geminiService';
+// import * as GeminiService from '../services/geminiService';
 import { format, addMonths, endOfMonth, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, isToday } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { clsx, type ClassValue } from "clsx";
@@ -367,10 +367,10 @@ export const EstimateForm: React.FC<EstimateFormProps> = ({
   const handleAiDescription = async (id: string, name: string) => {
     if (!name) return;
     setLoadingItemId(id);
-    const desc = await GeminiService.enhanceItemDescription(name);
+    {/* const desc = await GeminiService.enhanceItemDescription(name);
     if (desc) {
       updateItem(id, 'description', desc);
-    }
+    } */}
     setLoadingItemId(null);
   };
 
