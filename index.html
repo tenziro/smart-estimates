@@ -65,15 +65,19 @@
           overflow: visible !important;
         }
 
-        /* Hide UI components */
+        /* Hide UI components and guides */
         .no-print, 
         .margin-guide,
+        .spacing-guide,
+        [data-html2canvas-ignore="true"],
         button, 
         input,
         nav,
         header,
         aside {
           display: none !important;
+          opacity: 0 !important;
+          visibility: hidden !important;
         }
         
         /* Reset layout structure for print */
@@ -108,12 +112,11 @@
           page-break-after: always !important;
           display: block !important;
           position: relative !important;
-          overflow: hidden !important; /* Keep internal clipping for bleed effects */
+          overflow: hidden !important;
           background-color: white !important;
           border: none !important;
         }
 
-        /* Keep internal layouts intact */
         .a4-page * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;

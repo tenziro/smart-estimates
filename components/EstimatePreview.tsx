@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { EstimateData, LineItem, Margins, LayoutSpacing } from '../types';
 
@@ -22,14 +21,13 @@ interface PageChunk {
 }
 
 const MM_TO_PX = 3.78; // Approx px per mm at 96 DPI
-const SAFE_BUFFER_PX = 45; // 여유 공간을 20에서 45로 확대하여 텍스트 오버플로우 방지
+const SAFE_BUFFER_PX = 45; 
 
-// 실제 렌더링되는 높이에 가깝게 기본값 상향 조정
 const BASE_HEADER_HEIGHTS = {
-    default: 320,  // 로고, 제목, 공급자/고객 카드 정보 포함 (기존 240)
-    modern: 260,   // 상단 블리드 영역 포함 (기존 220)
-    classic: 240,  // 고전적인 표 형식 헤더 (기존 200)
-    minimal: 280   // 메타 정보 및 From/To 섹션 포함 (기존 190)
+    default: 320,
+    modern: 260,
+    classic: 240,
+    minimal: 280
 };
 
 const FOOTER_HEIGHTS = {
@@ -70,7 +68,7 @@ const calculatePages = (data: EstimateData): PageChunk[] => {
     let currentHeaderHeight = BASE_HEADER_HEIGHTS[data.layout] || 240;
     
     if (!data.logo && ['default', 'minimal'].includes(data.layout)) {
-        currentHeaderHeight -= 60; // 로고가 없을 경우 감소폭 조정
+        currentHeaderHeight -= 60;
     }
 
     if (data.layout === 'default') {
@@ -203,7 +201,7 @@ const SpacingGuide = ({ height, show, hidden = false }: { height: number, show: 
         marginBottom: 0,
     };
 
-    return <div style={style} className="print:hidden" data-html2canvas-ignore="true" />;
+    return <div style={style} className="print:hidden spacing-guide" data-html2canvas-ignore="true" />;
 };
 
 export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectionClick }) => {
@@ -276,15 +274,25 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
 
   const getItemCellStyle = () => {
       const padding = data.tableStyle.rowPadding ?? 16;
-      const guideStyle = data.styleConfig.showSpacingGuides 
-        ? `linear-gradient(to bottom, rgba(59, 130, 246, 0.1) ${padding}px, transparent ${padding}px, transparent calc(100% - ${padding}px), rgba(59, 130, 246, 0.1) calc(100% - ${padding}px))` 
-        : undefined;
-
       return {
           paddingTop: `${padding}px`,
           paddingBottom: `${padding}px`,
-          backgroundImage: guideStyle,
+          position: 'relative',
       } as React.CSSProperties;
+  };
+
+  const RowGuide = () => {
+      if (!data.styleConfig.showSpacingGuides) return null;
+      const padding = data.tableStyle.rowPadding ?? 16;
+      return (
+          <div 
+             className="absolute inset-0 pointer-events-none print:hidden spacing-guide" 
+             data-html2canvas-ignore="true"
+             style={{ 
+                 background: `linear-gradient(to bottom, rgba(59, 130, 246, 0.1) ${padding}px, transparent ${padding}px, transparent calc(100% - ${padding}px), rgba(59, 130, 246, 0.1) calc(100% - ${padding}px))` 
+             }} 
+          />
+      );
   };
 
   const SignatureBlock = () => (
@@ -472,12 +480,14 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
                             {items.map((item, idx) => (
                                 <tr key={item.id} style={getItemRowStyle(idx === items.length - 1)}>
                                 <td className="pr-4 align-top" style={cellStyle}>
+                                    <RowGuide />
                                     <p className="font-bold mb-1">{item.name}</p>
                                     <p className="text-slate-500" style={{ fontSize: `${Math.max(10, styleConfig.tableItem.fontSize - 2)}px` }}>{item.description}</p>
                                 </td>
-                                <td className="text-center align-top tabular-nums" style={cellStyle}>{item.quantity}</td>
-                                <td className="text-right align-top tabular-nums whitespace-nowrap" style={cellStyle}>{formatCurrency(item.price)}</td>
+                                <td className="text-center align-top tabular-nums" style={cellStyle}><RowGuide />{item.quantity}</td>
+                                <td className="text-right align-top tabular-nums whitespace-nowrap" style={cellStyle}><RowGuide />{formatCurrency(item.price)}</td>
                                 <td className="text-right align-top font-semibold tabular-nums whitespace-nowrap" style={cellStyle}>
+                                    <RowGuide />
                                     {formatCurrency(item.price * item.quantity)}
                                 </td>
                                 </tr>
@@ -619,12 +629,13 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
                             {items.map((item, idx) => (
                                 <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} style={getItemRowStyle(idx === items.length - 1)}>
                                 <td className="px-4 align-top" style={cellStyle}>
+                                    <RowGuide />
                                     <p className="font-bold mb-1">{item.name}</p>
                                     <p className="text-slate-500 opacity-80" style={{ fontSize: '0.9em' }}>{item.description}</p>
                                 </td>
-                                <td className="px-4 text-center align-top tabular-nums" style={cellStyle}>{item.quantity}</td>
-                                <td className="px-4 text-right align-top tabular-nums whitespace-nowrap" style={cellStyle}>{formatCurrency(item.price)}</td>
-                                <td className="px-4 text-right align-top font-bold tabular-nums whitespace-nowrap" style={cellStyle}>{formatCurrency(item.price * item.quantity)}</td>
+                                <td className="px-4 text-center align-top tabular-nums" style={cellStyle}><RowGuide />{item.quantity}</td>
+                                <td className="px-4 text-right align-top tabular-nums whitespace-nowrap" style={cellStyle}><RowGuide />{formatCurrency(item.price)}</td>
+                                <td className="px-4 text-right align-top font-bold tabular-nums whitespace-nowrap" style={cellStyle}><RowGuide />{formatCurrency(item.price * item.quantity)}</td>
                                 </tr>
                             ))}
                             </tbody>
@@ -772,14 +783,15 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
                                 <tbody>
                                     {items.map((item, idx) => (
                                         <tr key={item.id} style={{ color: styleConfig.tableItem.color }}>
-                                            <td className="px-2 text-center" style={tdStyle}>{idx + 1}</td>
+                                            <td className="px-2 text-center" style={tdStyle}><RowGuide />{idx + 1}</td>
                                             <td className="px-2" style={tdStyle}>
+                                                <RowGuide />
                                                 <div className="font-bold">{item.name}</div>
                                                 <div className="text-xs text-slate-500">{item.description}</div>
                                             </td>
-                                            <td className="px-2 text-center" style={tdStyle}>{item.quantity}</td>
-                                            <td className="px-2 text-right tabular-nums whitespace-nowrap" style={tdStyle}>{formatCurrency(item.price)}</td>
-                                            <td className="px-2 text-right tabular-nums whitespace-nowrap" style={tdStyle}>{formatCurrency(item.price * item.quantity)}</td>
+                                            <td className="px-2 text-center" style={tdStyle}><RowGuide />{item.quantity}</td>
+                                            <td className="px-2 text-right tabular-nums whitespace-nowrap" style={tdStyle}><RowGuide />{formatCurrency(item.price)}</td>
+                                            <td className="px-2 text-right tabular-nums whitespace-nowrap" style={tdStyle}><RowGuide />{formatCurrency(item.price * item.quantity)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -927,12 +939,13 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
                                 {items.map((item, idx) => (
                                     <tr key={item.id} style={getItemRowStyle(idx === items.length - 1)}>
                                         <td className="py-3 pr-4 align-top" style={cellStyle}>
+                                            <RowGuide />
                                             <p className="font-medium text-slate-900">{item.name}</p>
                                             <p className="text-slate-500 text-xs mt-0.5">{item.description}</p>
                                         </td>
-                                        <td className="py-3 text-center align-top tabular-nums text-slate-600" style={cellStyle}>{item.quantity}</td>
-                                        <td className="py-3 text-right align-top tabular-nums text-slate-600" style={cellStyle}>{formatCurrency(item.price)}</td>
-                                        <td className="py-3 text-right align-top font-medium tabular-nums text-slate-900" style={cellStyle}>{formatCurrency(item.price * item.quantity)}</td>
+                                        <td className="py-3 text-center align-top tabular-nums text-slate-600" style={cellStyle}><RowGuide />{item.quantity}</td>
+                                        <td className="py-3 text-right align-top tabular-nums text-slate-600" style={cellStyle}><RowGuide />{formatCurrency(item.price)}</td>
+                                        <td className="py-3 text-right align-top font-medium tabular-nums text-slate-900" style={cellStyle}><RowGuide />{formatCurrency(item.price * item.quantity)}</td>
                                     </tr>
                                 ))}
                             </tbody>
