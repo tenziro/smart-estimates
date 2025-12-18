@@ -326,10 +326,17 @@ const App: React.FC = () => {
         className={`w-full md:w-[480px] lg:w-[520px] bg-white h-auto md:h-screen md:sticky md:top-0 z-10 flex flex-col border-r border-gray-200 shadow-xl no-print transition-all duration-300 ${!isFormOpen ? 'hidden' : ''} ${isDark ? 'dark' : ''}`}
       >
          <div className="flex-1 overflow-hidden flex flex-col">
-            <EstimateForm 
+            {/* <EstimateForm 
                 data={estimateData} 
                 onChange={handleDataChange} 
                 onGenerateNotes={handleGenerateNotes} 
+                isGeneratingNotes={isGeneratingNotes}
+                theme={theme}
+                setTheme={setTheme}
+            /> */}
+            <EstimateForm 
+                data={estimateData} 
+                onChange={handleDataChange} 
                 isGeneratingNotes={isGeneratingNotes}
                 theme={theme}
                 setTheme={setTheme}
