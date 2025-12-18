@@ -3,7 +3,7 @@ import { EstimateForm } from './components/EstimateForm';
 import { EstimatePreview } from './components/EstimatePreview';
 import { EstimateData } from './types';
 import { Download, CloudUpload, Printer, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import * as GeminiService from './services/geminiService';
+// import * as GeminiService from './services/geminiService';
 import { downloadPDF, getPDFBlob } from './services/pdfService';
 import { getAccessToken, uploadPDFToDrive, pickFolder, isDriveConfigured } from './services/googleDriveService';
 import { Alert } from './components/ui/Alert';
