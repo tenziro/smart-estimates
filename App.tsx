@@ -218,12 +218,12 @@ const App: React.FC = () => {
     setEstimateData(newData);
   }, []);
 
-  const handleGenerateNotes = async () => {
-    setIsGeneratingNotes(true);
-    const notes = await GeminiService.generateEstimateNotes(estimateData);
-    setEstimateData(prev => ({ ...prev, notes }));
-    setIsGeneratingNotes(false);
-  };
+  // const handleGenerateNotes = async () => {
+  //   setIsGeneratingNotes(true);
+  //   const notes = await GeminiService.generateEstimateNotes(estimateData);
+  //   setEstimateData(prev => ({ ...prev, notes }));
+  //   setIsGeneratingNotes(false);
+  // };
 
   const getFileName = () => {
     return `${estimateData.title}_${estimateData.estimateNumber}_${estimateData.date}`;
