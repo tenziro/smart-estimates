@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Trash2, Upload, Image as ImageIcon, Type, Stamp, User, Briefcase, Calendar as CalendarIcon, FileText, Palette, Layout, GripVertical, ChevronLeft, ChevronRight, Grid, Move, Eye, Sun, Moon, Monitor, ArrowUpDown } from 'lucide-react';
 import { EstimateData, LineItem, StyleConfig, EstimateLayout } from '../types';
@@ -307,11 +308,13 @@ export const EstimateForm: React.FC<EstimateFormProps> = ({
     if (file) {
       if (file.type !== 'image/jpeg' && file.type !== 'image/png') {
         alert('JPG 또는 PNG 파일만 업로드 가능합니다.');
+        e.target.value = ''; // Reset on invalid type
         return;
       }
       const reader = new FileReader();
       reader.onloadend = () => {
         updateField('logo', reader.result as string);
+        e.target.value = ''; // Reset after successful read so same file can be picked again
       };
       reader.readAsDataURL(file);
     }
@@ -322,11 +325,13 @@ export const EstimateForm: React.FC<EstimateFormProps> = ({
     if (file) {
       if (file.type !== 'image/jpeg' && file.type !== 'image/png') {
         alert('JPG 또는 PNG 파일만 업로드 가능합니다.');
+        e.target.value = ''; // Reset on invalid type
         return;
       }
       const reader = new FileReader();
       reader.onloadend = () => {
         updateField('seal', reader.result as string);
+        e.target.value = ''; // Reset after successful read so same file can be picked again
       };
       reader.readAsDataURL(file);
     }
