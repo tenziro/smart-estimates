@@ -15,27 +15,25 @@ interface FooterSectionData {
 
 interface PageChunk {
   items: LineItem[];
-  footerSections: FooterSectionData[]; // Changed from string[] to object to track spacing state
+  footerSections: FooterSectionData[];
   isFirst: boolean;
   pageNum: number;
 }
 
 const MM_TO_PX = 3.78; // Approx px per mm at 96 DPI
-const SAFE_BUFFER_PX = 20; // Reduced buffer back to 20px to allow more content
+const SAFE_BUFFER_PX = 45; // 여유 공간
 
-// Optimized base heights to allow more content on the first page
 const BASE_HEADER_HEIGHTS = {
-    default: 240, 
-    modern: 220, // Reduced from 240
-    classic: 200, // Reduced from 220
-    minimal: 190  // Reduced from 230
+    default: 320,
+    modern: 260,
+    classic: 240,
+    minimal: 280
 };
 
-// Adjusted footer base heights to be tighter
 const FOOTER_HEIGHTS = {
-    totals: 140, // Reduced from 160
-    payment: 100, // Reduced from 120
-    signature: 120 // Reduced from 150
+    totals: 160, 
+    payment: 110,
+    signature: 140 
 };
 
 const calculatePages = (data: EstimateData): PageChunk[] => {
@@ -44,42 +42,35 @@ const calculatePages = (data: EstimateData): PageChunk[] => {
     const { top, bottom, left, right } = data.styleConfig.margins || { top: 20, bottom: 20, left: 20, right: 20 };
     const TOP_MARGIN_PX = top * MM_TO_PX;
     
-    // Reduced forced bottom margin for page numbers from 20 to 15mm
     const effectiveBottomMarginMm = data.styleConfig.footer.showPageNumbers ? Math.max(bottom, 15) : bottom;
     const BOTTOM_MARGIN_PX = effectiveBottomMarginMm * MM_TO_PX;
     
-    // Effective content height
     const PAGE_CONTENT_HEIGHT = PAGE_HEIGHT_PX - TOP_MARGIN_PX - BOTTOM_MARGIN_PX - SAFE_BUFFER_PX;
     const contentWidthMm = 210 - left - right;
     const contentWidthPx = contentWidthMm * MM_TO_PX;
 
     const itemFontSize = data.styleConfig.tableItem.fontSize || 14;
     const footerFontSize = data.styleConfig.footer.fontSize || 13;
-    const itemLineHeight = itemFontSize * 1.5;
+    const itemLineHeight = itemFontSize * 1.6;
     const footerLineHeight = footerFontSize * 1.6;
 
     const rowPadding = data.tableStyle.rowPadding ?? 16;
     const verticalPadding = rowPadding * 2;
-    const TABLE_HEADER_HEIGHT = 50;
+    const TABLE_HEADER_HEIGHT = 55;
     
-    // Matched to visual height: h-10 (40px) + mb-8 (32px) = 72px. Rounding up to 80 for safety.
     const HEADER_HEIGHT_SUB_PAGE = 80; 
 
-    // Helper to get spacing safely
     const getSpacing = (key: string) => {
         // @ts-ignore
         return (data.styleConfig.spacing[data.layout]?.[key] ?? 24);
     }
 
-    // Calculate Dynamic Header Height based on layout and spacings
     let currentHeaderHeight = BASE_HEADER_HEIGHTS[data.layout] || 240;
     
-    // Adjust header height if logo is missing (heuristic)
     if (!data.logo && ['default', 'minimal'].includes(data.layout)) {
-        currentHeaderHeight -= 40;
+        currentHeaderHeight -= 60; 
     }
 
-    // Add spacing based on layout configuration
     if (data.layout === 'default') {
         currentHeaderHeight += getSpacing('logoToTitle') + getSpacing('titleToClient') + getSpacing('clientToTable');
     } else if (data.layout === 'modern') {
@@ -92,18 +83,14 @@ const calculatePages = (data: EstimateData): PageChunk[] => {
 
     const pages: PageChunk[] = [];
     let currentItems: LineItem[] = [];
-    
-    // Initial current height includes the dynamic header and table header
     let currentHeight = currentHeaderHeight + TABLE_HEADER_HEIGHT;
     
-    // 1. Process Items
     data.items.forEach((item) => {
-        const descColWidthPx = contentWidthPx * 0.5; // Assuming description takes ~50% width
-        const avgCharWidth = itemFontSize * 0.8; 
+        const descColWidthPx = contentWidthPx * 0.5;
+        const avgCharWidth = itemFontSize * 0.75; 
         const charsPerLine = Math.floor(descColWidthPx / avgCharWidth);
         const descLines = item.description ? Math.max(1, Math.ceil(item.description.length / charsPerLine)) : 0;
         
-        // Dynamic height calculation based on content + dynamic padding
         const rowHeight = itemLineHeight + (descLines * itemLineHeight) + verticalPadding;
 
         if (currentHeight + rowHeight > PAGE_CONTENT_HEIGHT) {
@@ -121,11 +108,8 @@ const calculatePages = (data: EstimateData): PageChunk[] => {
         }
     });
 
-    // 2. Process Footer Sections
     const footerQueue: { id: string, height: number, spacing: number }[] = [];
-    
-    // Classic layout has a smaller totals section (single row)
-    const totalsHeight = data.layout === 'classic' ? 60 : FOOTER_HEIGHTS.totals;
+    const totalsHeight = data.layout === 'classic' ? 70 : FOOTER_HEIGHTS.totals;
 
     footerQueue.push({ id: 'totals', height: totalsHeight, spacing: getSpacing('tableToTotal') });
 
@@ -136,14 +120,13 @@ const calculatePages = (data: EstimateData): PageChunk[] => {
     if (data.showNotes && data.notes) {
         const charsPerLineFooter = Math.floor(contentWidthPx / (footerFontSize * 0.8));
         const lines = Math.ceil(data.notes.length / charsPerLineFooter) + (data.notes.match(/\n/g) || []).length;
-        // Base height for title + line height * lines
-        footerQueue.push({ id: 'notes', height: 40 + (lines * footerLineHeight), spacing: getSpacing('paymentToNotes') });
+        footerQueue.push({ id: 'notes', height: 50 + (lines * footerLineHeight), spacing: getSpacing('paymentToNotes') });
     }
 
     if (data.showTerms && data.terms) {
         const charsPerLineFooter = Math.floor(contentWidthPx / (footerFontSize * 0.8));
         const lines = Math.ceil(data.terms.length / charsPerLineFooter) + (data.terms.match(/\n/g) || []).length;
-        footerQueue.push({ id: 'terms', height: 40 + (lines * footerLineHeight), spacing: getSpacing('notesToTerms') });
+        footerQueue.push({ id: 'terms', height: 50 + (lines * footerLineHeight), spacing: getSpacing('notesToTerms') });
     }
 
     footerQueue.push({ id: 'signature', height: FOOTER_HEIGHTS.signature, spacing: getSpacing('termsToSignature') });
@@ -151,15 +134,12 @@ const calculatePages = (data: EstimateData): PageChunk[] => {
     let currentFooterSections: FooterSectionData[] = [];
     
     footerQueue.forEach(section => {
-        // Calculate height required if we add spacing
         const heightWithSpacing = section.height + section.spacing;
 
         if (currentHeight + heightWithSpacing <= PAGE_CONTENT_HEIGHT) {
-            // It fits with spacing
             currentFooterSections.push({ id: section.id, skipSpacing: false });
             currentHeight += heightWithSpacing;
         } else {
-            // It doesn't fit, push current page
             pages.push({ 
                 items: currentItems, 
                 footerSections: currentFooterSections, 
@@ -167,12 +147,7 @@ const calculatePages = (data: EstimateData): PageChunk[] => {
                 pageNum: pages.length + 1
             });
             currentItems = []; 
-            
-            // Start new page with this section
-            // KEY CHANGE: On the new page, we skip the spacing visually at the top
             currentFooterSections = [{ id: section.id, skipSpacing: true }];
-            
-            // Current height on new page is just sub-header + section height (no spacing)
             currentHeight = HEADER_HEIGHT_SUB_PAGE + section.height; 
         }
     });
@@ -187,19 +162,15 @@ const calculatePages = (data: EstimateData): PageChunk[] => {
     return pages;
 };
 
-// --- Margin Visualization Component ---
 const MarginVisualizer = ({ margins, show }: { margins: Margins, show: boolean }) => {
   if (!show) return null;
-
   const style: React.CSSProperties = {
     background: 'repeating-linear-gradient(45deg, rgba(255, 0, 0, 0.03) 0px, rgba(255, 0, 0, 0.03) 2px, transparent 2px, transparent 8px)',
     position: 'absolute',
     zIndex: 50,
     pointerEvents: 'none',
   };
-
   const borderStyle = '1px dashed rgba(255,0,0,0.15)';
-
   return (
     <div className="absolute inset-0 pointer-events-none margin-guide print:hidden" data-html2canvas-ignore="true">
       <div style={{ ...style, top: 0, left: 0, right: 0, height: `${margins.top}mm`, borderBottom: borderStyle }} />
@@ -210,27 +181,17 @@ const MarginVisualizer = ({ margins, show }: { margins: Margins, show: boolean }
   );
 };
 
-// --- Spacing Visualization Component ---
 const SpacingGuide = ({ height, show, hidden = false }: { height: number, show: boolean, hidden?: boolean }) => {
-    // If hidden (e.g. top of new page) or height <= 0, don't render
     if (hidden || height <= 0) return null;
-    
-    // Always render a div to take up space, but conditionally apply the visual guide styles
     const style: React.CSSProperties = {
         height: `${height}px`,
         width: '100%',
-        // Visual guide styles - only if 'show' is true
         background: show ? 'repeating-linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0px, rgba(59, 130, 246, 0.1) 4px, transparent 4px, transparent 8px)' : undefined,
         borderTop: show ? '1px dashed rgba(59, 130, 246, 0.2)' : undefined,
         borderBottom: show ? '1px dashed rgba(59, 130, 246, 0.2)' : undefined,
-        
         pointerEvents: 'none',
         display: 'block',
-        marginTop: 0,
-        marginBottom: 0,
     };
-
-    // Add print:hidden and data-html2canvas-ignore to prevent export/printing
     return <div style={style} className="print:hidden" data-html2canvas-ignore="true" />;
 };
 
@@ -243,7 +204,6 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
   
   let discountAmount = 0;
   if (data.discountType === 'rate') {
-      // Calculate discount rate based on Total (Subtotal + Tax)
       discountAmount = Math.floor(totalBeforeDiscount * (data.discount / 100));
   } else {
       discountAmount = data.discount || 0;
@@ -259,7 +219,6 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
   };
   const formatSimpleDate = (dateStr: string) => dateStr || '';
 
-  // Clickable Granular Area (Defined early to avoid TDZ/type issues)
   const ClickableArea = ({ children, sectionId, className = '', style }: { children?: React.ReactNode, sectionId: string, className?: string, style?: React.CSSProperties }) => {
       return (
           <div 
@@ -269,14 +228,12 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
                  onSectionClick?.(sectionId);
              }}
              style={style}
-             title="클릭하여 수정하기"
           >
               {children}
           </div>
       )
   };
 
-  // Wrapper for Spacing Logic with visual guide (Defined early)
   const Spacing = ({ id, hidden = false }: { id: string, hidden?: boolean }) => {
       // @ts-ignore
       const spacingValue = (data.styleConfig.spacing[data.layout]?.[id] ?? 24);
@@ -295,18 +252,13 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
       );
   }
 
-  // Helper for item spacing styles
   const getItemRowStyle = (isLast: boolean) => {
-      const padding = data.tableStyle.rowPadding ?? 16;
-      
-      const style: React.CSSProperties = {
+      return {
           borderBottomWidth: isLast ? 0 : `${data.tableStyle.itemBorderBottomWidth}px`,
           borderBottomColor: data.tableStyle.borderColor,
           color: data.styleConfig.tableItem.color,
           fontSize: `${data.styleConfig.tableItem.fontSize}px`,
       };
-
-      return style;
   };
 
   const getItemCellStyle = () => {
@@ -341,16 +293,9 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
   const PaymentSection = () => {
     const { styleConfig } = data;
     if (!styleConfig.payment.show) return null;
-
-    // Check if we should use the card style (bg and padding)
-    // Default and Minimal layouts should be cleaner without the box/background
     const isCleanLayout = ['default', 'minimal'].includes(data.layout);
-
     return (
-        <ClickableArea 
-            sectionId="form-section-payment" 
-            className={isCleanLayout ? "block py-2" : "p-4 bg-slate-50 rounded-lg block"}
-        >
+        <ClickableArea sectionId="form-section-payment" className={isCleanLayout ? "block py-2" : "p-4 bg-slate-50 rounded-lg block"}>
             <h3 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">계좌 정보 (PAYMENT INFO)</h3>
             <div className="font-medium tabular-nums" style={{ fontSize: `${styleConfig.payment.fontSize}px`, color: styleConfig.payment.color }}>
                 {data.paymentInfo.bank && <span className="font-bold">{data.paymentInfo.bank}</span>}
@@ -363,10 +308,9 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
   };
 
   const NotesSection = () => {
-     const { styleConfig } = data;
      if (!data.showNotes || !data.notes) return null;
      return (
-        <ClickableArea sectionId="form-section-notes" className="block" style={{ fontSize: `${styleConfig.footer.fontSize}px`, color: styleConfig.footer.color }}>
+        <ClickableArea sectionId="form-section-notes" className="block" style={{ fontSize: `${data.styleConfig.footer.fontSize}px`, color: data.styleConfig.footer.color }}>
             <h3 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">{data.notesTitle}</h3>
             <p className="leading-relaxed whitespace-pre-wrap">{data.notes}</p>
         </ClickableArea>
@@ -374,22 +318,19 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
   };
 
   const TermsSection = () => {
-     const { styleConfig } = data;
      if (!data.showTerms || !data.terms) return null;
      return (
-        <ClickableArea sectionId="form-section-terms" className="block" style={{ fontSize: `${styleConfig.footer.fontSize}px`, color: styleConfig.footer.color }}>
+        <ClickableArea sectionId="form-section-terms" className="block" style={{ fontSize: `${data.styleConfig.footer.fontSize}px`, color: data.styleConfig.footer.color }}>
             <h3 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">{data.termsTitle}</h3>
             <p className="leading-relaxed whitespace-pre-wrap">{data.terms}</p>
         </ClickableArea>
      );
   };
 
-  // Modified TotalsSection to accept a width class for flexibility
   const TotalsSection = ({ widthClass = "w-5/12" }: { widthClass?: string }) => {
-      const { styleConfig } = data;
       return (
         <ClickableArea sectionId="form-section-items" className="flex justify-end border-t border-slate-100 pt-8 mt-4">
-            <div className={widthClass} style={{ fontSize: `${styleConfig.total.fontSize}px`, color: styleConfig.total.color }}>
+            <div className={widthClass} style={{ fontSize: `${data.styleConfig.total.fontSize}px`, color: data.styleConfig.total.color }}>
                 <div className="flex justify-between py-2 text-slate-600 tabular-nums">
                     <span style={{ fontSize: '0.9em' }}>소계</span>
                     <span className="font-semibold whitespace-nowrap">{formatCurrency(subtotal)}</span>
@@ -400,10 +341,7 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
                 </div>
                 {discountAmount > 0 && (
                 <div className="flex justify-between py-2 text-red-500 border-b border-slate-100 mb-2 tabular-nums font-medium">
-                    <span style={{ fontSize: '0.9em' }}>
-                        할인 금액
-                        {data.discountType === 'rate' && <span className="text-xs ml-1 opacity-80">({data.discount}%)</span>}
-                    </span>
+                    <span style={{ fontSize: '0.9em' }}>할인 금액{data.discountType === 'rate' && <span className="text-xs ml-1 opacity-80">({data.discount}%)</span>}</span>
                     <span className="whitespace-nowrap">- {formatCurrency(discountAmount)}</span>
                 </div>
                 )}
@@ -425,40 +363,27 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
   
   const LayoutDefault = ({ chunk }: { chunk: PageChunk }) => {
       const { items, footerSections, isFirst } = chunk;
-      const { styleConfig } = data;
-      const cellStyle = getItemCellStyle();
-
-      // Find individual section data to check skipSpacing
       const getSectionData = (id: string) => footerSections.find(s => s.id === id);
-
       return (
           <div className="a4-page-export a4-page bg-white relative flex flex-col h-[297mm] overflow-hidden" style={ContainerStyle}>
               <MarginVisualizer margins={data.styleConfig.margins} show={data.styleConfig.showMarginGuides} />
-              <div className="flex-1 relative z-10">
-                  {isFirst ? (
+              <div className="flex-1 relative z-10 overflow-hidden">
+                  {isFirst && (
                      <>
                         <div className="flex justify-between items-start">
                             <ClickableArea sectionId="form-section-header" className="flex flex-col">
-                                <div className="flex items-center justify-center overflow-hidden" style={{ width: '140px', height: '80px', justifyContent: 'flex-start' }}>
-                                    {data.logo ? (
-                                    <img src={data.logo} alt="Company Logo" className="object-contain w-full h-full object-left" />
-                                    ) : (
-                                    <div className="w-12 h-12 bg-slate-900 rounded-full flex items-center justify-center">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="w-6 h-6">
-                                            <path d="M3 21h18M3 10h18M3 7l9-4 9 4M5 10v11M19 10v11M9 10v11M15 10v11" strokeLinecap="round" strokeLinejoin="round"/>
-                                        </svg>
-                                    </div>
-                                    )}
+                                <div className="flex items-center justify-start overflow-hidden mb-2" style={{ width: '140px', height: '60px' }}>
+                                    {data.logo ? <img src={data.logo} alt="Logo" className="object-contain w-full h-full object-left" /> : <div className="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center"><svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="w-5 h-5"><path d="M3 21h18M3 10h18M3 7l9-4 9 4M5 10v11M19 10v11M9 10v11M15 10v11" strokeLinecap="round" strokeLinejoin="round"/></svg></div>}
                                 </div>
                                 <Spacing id="logoToTitle" />
                                 <div>
-                                    <h1 className="font-extrabold mb-2 tracking-tight" style={{ fontSize: `${styleConfig.header.fontSize}px`, color: styleConfig.header.color }}>{data.title}</h1>
+                                    <h1 className="font-extrabold mb-1 tracking-tight" style={{ fontSize: `${data.styleConfig.header.fontSize}px`, color: data.styleConfig.header.color }}>{data.title}</h1>
                                     <p className="text-slate-500 text-sm tracking-wide font-medium">NO. {data.estimateNumber}</p>
                                 </div>
                             </ClickableArea>
-                            <ClickableArea sectionId="form-section-supplier" className="text-right" style={{ fontSize: `${styleConfig.supplier.fontSize}px`, color: styleConfig.supplier.color }}>
-                                <h2 className="font-bold text-lg mb-1" style={{ color: styleConfig.header.color }}>{data.myInfo.name}</h2>
-                                <div className="space-y-1 tabular-nums">
+                            <ClickableArea sectionId="form-section-supplier" className="text-right" style={{ fontSize: `${data.styleConfig.supplier.fontSize}px`, color: data.styleConfig.supplier.color }}>
+                                <h2 className="font-bold text-lg mb-1" style={{ color: data.styleConfig.header.color }}>{data.myInfo.name}</h2>
+                                <div className="space-y-0.5 tabular-nums">
                                     <p>{data.myInfo.address}</p>
                                     <p>{data.myInfo.email}</p>
                                     <p>{data.myInfo.phone}</p>
@@ -466,43 +391,34 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
                                 </div>
                             </ClickableArea>
                         </div>
-                        
                         <Spacing id="titleToClient" />
-
-                        <div className="bg-slate-50 rounded-lg p-6 grid grid-cols-12 gap-6">
+                        <div className="bg-slate-50 rounded-lg p-5 grid grid-cols-12 gap-5">
                             <ClickableArea sectionId="form-section-client" className="col-span-6">
-                                <h3 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">청구/수신 (BILL TO)</h3>
-                                <p className="font-bold text-lg text-slate-900 mb-1">{data.clientInfo.name}</p>
-                                <div className="space-y-0.5 tabular-nums" style={{ fontSize: `${styleConfig.client.fontSize}px`, color: styleConfig.client.color }}>
+                                <h3 className="text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">청구/수신 (BILL TO)</h3>
+                                <p className="font-bold text-lg text-slate-900 mb-0.5">{data.clientInfo.name}</p>
+                                <div className="space-y-0.5 tabular-nums" style={{ fontSize: `${data.styleConfig.client.fontSize}px`, color: data.styleConfig.client.color }}>
                                     {data.clientInfo.address && <p>{data.clientInfo.address}</p>}
                                     <p>{data.clientInfo.email}</p>
                                     {data.clientInfo.phone && <p>{data.clientInfo.phone}</p>}
                                 </div>
                             </ClickableArea>
                             <ClickableArea sectionId="form-section-header" className="col-span-3">
-                                <h3 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">발행일 (DATE)</h3>
+                                <h3 className="text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">발행일 (DATE)</h3>
                                 <p className="font-semibold text-slate-900 tabular-nums">{formatSimpleDate(data.date)}</p>
                             </ClickableArea>
                             <ClickableArea sectionId="form-section-header" className="col-span-3">
-                                <h3 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">만료일 (DUE DATE)</h3>
+                                <h3 className="text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wider">만료일 (DUE DATE)</h3>
                                 <p className="font-semibold text-slate-900 tabular-nums">{formatSimpleDate(data.validUntil)}</p>
                             </ClickableArea>
                         </div>
-
                         <Spacing id="clientToTable" />
                      </>
-                  ) : null}
-
+                  )}
                   {items.length > 0 && (
                       <ClickableArea sectionId="form-section-items" className="block">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                            <tr style={{
-                                borderBottomWidth: `${data.tableStyle.headerBorderBottomWidth}px`,
-                                borderBottomColor: data.tableStyle.borderColor,
-                                color: styleConfig.tableHeader.color,
-                                fontSize: `${styleConfig.tableHeader.fontSize}px`
-                            }}>
+                            <tr style={{ borderBottomWidth: `${data.tableStyle.headerBorderBottomWidth}px`, borderBottomColor: data.tableStyle.borderColor, color: data.styleConfig.tableHeader.color, fontSize: `${data.styleConfig.tableHeader.fontSize}px` }}>
                                 <th className="py-3 font-bold w-1/2">항목</th>
                                 <th className="py-3 font-bold text-center w-24">M/M</th>
                                 <th className="py-3 font-bold text-right">단가</th>
@@ -512,149 +428,63 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
                             <tbody>
                             {items.map((item, idx) => (
                                 <tr key={item.id} style={getItemRowStyle(idx === items.length - 1)}>
-                                <td className="pr-4 align-top" style={cellStyle}>
-                                    <p className="font-bold mb-1">{item.name}</p>
-                                    <p className="text-slate-500" style={{ fontSize: `${Math.max(10, styleConfig.tableItem.fontSize - 2)}px` }}>{item.description}</p>
-                                </td>
-                                <td className="text-center align-top tabular-nums" style={cellStyle}>{item.quantity}</td>
-                                <td className="text-right align-top tabular-nums whitespace-nowrap" style={cellStyle}>{formatCurrency(item.price)}</td>
-                                <td className="text-right align-top font-semibold tabular-nums whitespace-nowrap" style={cellStyle}>
-                                    {formatCurrency(item.price * item.quantity)}
-                                </td>
+                                <td className="pr-4 align-top" style={getItemCellStyle()}><p className="font-bold mb-1">{item.name}</p><p className="text-slate-500" style={{ fontSize: `${Math.max(10, data.styleConfig.tableItem.fontSize - 2)}px` }}>{item.description}</p></td>
+                                <td className="text-center align-top tabular-nums" style={getItemCellStyle()}>{item.quantity}</td>
+                                <td className="text-right align-top tabular-nums whitespace-nowrap" style={getItemCellStyle()}>{formatCurrency(item.price)}</td>
+                                <td className="text-right align-top font-semibold tabular-nums whitespace-nowrap" style={getItemCellStyle()}>{formatCurrency(item.price * item.quantity)}</td>
                                 </tr>
                             ))}
                             </tbody>
                         </table>
                     </ClickableArea>
                   )}
-
-                  {getSectionData('totals') && (
-                      <>
-                        <Spacing id="tableToTotal" hidden={getSectionData('totals')?.skipSpacing} />
-                        <TotalsSection />
-                      </>
-                  )}
-                  {getSectionData('payment') && (
-                      <>
-                        <Spacing id="totalToPayment" hidden={getSectionData('payment')?.skipSpacing} />
-                        <PaymentSection />
-                      </>
-                  )}
-                  {getSectionData('notes') && (
-                      <>
-                        <Spacing id="paymentToNotes" hidden={getSectionData('notes')?.skipSpacing} />
-                        <NotesSection />
-                      </>
-                  )}
-                  {getSectionData('terms') && (
-                      <>
-                        <Spacing id="notesToTerms" hidden={getSectionData('terms')?.skipSpacing} />
-                        <TermsSection />
-                      </>
-                  )}
-                  
-                  {getSectionData('signature') && (
-                    <>
-                        <Spacing id="termsToSignature" hidden={getSectionData('signature')?.skipSpacing} />
-                        <div className="text-right">
-                            <ClickableArea sectionId="form-section-supplier" className="inline-block">
-                                <SignatureBlock />
-                            </ClickableArea>
-                        </div>
-                    </>
-                  )}
+                  {getSectionData('totals') && <><Spacing id="tableToTotal" hidden={getSectionData('totals')?.skipSpacing} /><TotalsSection /></>}
+                  {getSectionData('payment') && <><Spacing id="totalToPayment" hidden={getSectionData('payment')?.skipSpacing} /><PaymentSection /></>}
+                  {getSectionData('notes') && <><Spacing id="paymentToNotes" hidden={getSectionData('notes')?.skipSpacing} /><NotesSection /></>}
+                  {getSectionData('terms') && <><Spacing id="notesToTerms" hidden={getSectionData('terms')?.skipSpacing} /><TermsSection /></>}
+                  {getSectionData('signature') && <><Spacing id="termsToSignature" hidden={getSectionData('signature')?.skipSpacing} /><div className="text-right"><ClickableArea sectionId="form-section-supplier" className="inline-block"><SignatureBlock /></ClickableArea></div></>}
               </div>
-              
-              <PageNumber current={chunk.pageNum} total={calculatePages(data).length} />
+              <PageNumber current={chunk.pageNum} total={pages.length} />
           </div>
       );
   }
 
   const LayoutModern = ({ chunk }: { chunk: PageChunk }) => {
       const { items, footerSections, isFirst } = chunk;
-      const { styleConfig } = data;
       const margins = data.styleConfig.margins || { top: 20, bottom: 20, left: 20, right: 20 };
-      const cellStyle = getItemCellStyle();
-      
-      const bleedStyle = {
-          marginTop: `-${margins.top}mm`,
-          marginLeft: `-${margins.left}mm`,
-          marginRight: `-${margins.right}mm`,
-          padding: `${margins.top}mm ${margins.right}mm 20px ${margins.left}mm`, 
-          backgroundColor: styleConfig.modernHeaderColor || styleConfig.header.color,
-      };
-
-      // Determine text color for Modern layout header
-      // Use modernHeaderTextColor if available, fallback to white since Modern usually has dark background
-      const headerTextColor = styleConfig.modernHeaderTextColor || '#ffffff';
-
-      // Find individual section data to check skipSpacing
+      const bleedStyle = { marginTop: `-${margins.top}mm`, marginLeft: `-${margins.left}mm`, marginRight: `-${margins.right}mm`, padding: `${margins.top}mm ${margins.right}mm 20px ${margins.left}mm`, backgroundColor: data.styleConfig.modernHeaderColor || data.styleConfig.header.color };
+      const headerTextColor = data.styleConfig.modernHeaderTextColor || '#ffffff';
       const getSectionData = (id: string) => footerSections.find(s => s.id === id);
-
       return (
         <div className="a4-page-export a4-page bg-white relative flex flex-col h-[297mm] overflow-hidden" style={ContainerStyle}>
             <MarginVisualizer margins={data.styleConfig.margins} show={data.styleConfig.showMarginGuides} />
-            <div className="flex-1 relative z-10">
-                {isFirst ? (
+            <div className="flex-1 relative z-10 overflow-hidden">
+                {isFirst && (
                     <>
-                        <ClickableArea sectionId="form-section-header" style={bleedStyle} className="flex justify-between items-center">
-                            <div>
-                                <h1 className="font-extrabold text-4xl mb-2 tracking-tight" style={{ color: headerTextColor }}>{data.title}</h1>
-                                <p className="opacity-80 font-medium" style={{ color: headerTextColor }}>NO. {data.estimateNumber}</p>
-                            </div>
-                            <div className="text-right" style={{ color: headerTextColor }}>
-                                <p className="text-sm opacity-70 mb-1">총계 (TOTAL)</p>
-                                <p className="text-3xl font-bold tabular-nums">{formatCurrency(total)}</p>
-                            </div>
+                        <ClickableArea sectionId="form-section-header" style={bleedStyle} className="flex justify-between items-center -webkit-print-color-adjust-exact">
+                            <div><h1 className="font-extrabold text-4xl mb-2 tracking-tight" style={{ color: headerTextColor }}>{data.title}</h1><p className="opacity-80 font-medium" style={{ color: headerTextColor }}>NO. {data.estimateNumber}</p></div>
+                            <div className="text-right" style={{ color: headerTextColor }}><p className="text-sm opacity-70 mb-1">총계 (TOTAL)</p><p className="text-3xl font-bold tabular-nums">{formatCurrency(total)}</p></div>
                         </ClickableArea>
-
                         <Spacing id="headerToInfo" />
-
                         <div className="grid grid-cols-2 gap-8">
-                            <ClickableArea sectionId="form-section-supplier">
+                            <ClickableArea sectionId="form-section-supplier" className="space-y-3">
                                 <h3 className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider border-b border-slate-200 pb-2">공급자</h3>
-                                <div className="space-y-3">
-                                    {data.logo && <img src={data.logo} alt="logo" className="h-12 object-contain mb-4" />}
-                                    <div style={{ fontSize: `${styleConfig.supplier.fontSize}px`, color: styleConfig.supplier.color }}>
-                                        <p className="font-bold text-lg mb-1 text-slate-900">{data.myInfo.name}</p>
-                                        <p>{data.myInfo.address}</p>
-                                        <p>{data.myInfo.email}</p>
-                                        <p>{data.myInfo.phone}</p>
-                                        <p>사업자번호: {data.myInfo.registrationNumber}</p>
-                                    </div>
-                                </div>
+                                {data.logo && <img src={data.logo} alt="logo" className="h-12 object-contain mb-4" />}
+                                <div style={{ fontSize: `${data.styleConfig.supplier.fontSize}px`, color: data.styleConfig.supplier.color }}><p className="font-bold text-lg mb-1 text-slate-900">{data.myInfo.name}</p><p>{data.myInfo.address}</p><p>{data.myInfo.email}</p><p>{data.myInfo.phone}</p><p>사업자번호: {data.myInfo.registrationNumber}</p></div>
                             </ClickableArea>
                             <ClickableArea sectionId="form-section-client">
                                 <h3 className="text-xs font-bold text-slate-400 mb-4 uppercase tracking-wider border-b border-slate-200 pb-2">청구/수신 (BILL TO)</h3>
-                                <div style={{ fontSize: `${styleConfig.client.fontSize}px`, color: styleConfig.client.color }}>
-                                    <p className="font-bold text-lg mb-1 text-slate-900">{data.clientInfo.name}</p>
-                                    <p>{data.clientInfo.contactPerson}</p>
-                                    <p>{data.clientInfo.address}</p>
-                                    <p>{data.clientInfo.email}</p>
-                                    <p>{data.clientInfo.phone}</p>
-                                    <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
-                                        <div>
-                                            <span className="block text-xs text-slate-400">발행일 (DATE)</span>
-                                            <span className="font-medium tabular-nums text-slate-800">{formatSimpleDate(data.date)}</span>
-                                        </div>
-                                        <div>
-                                            <span className="block text-xs text-slate-400">만료일 (DUE DATE)</span>
-                                            <span className="font-medium tabular-nums text-slate-800">{formatSimpleDate(data.validUntil)}</span>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div style={{ fontSize: `${data.styleConfig.client.fontSize}px`, color: data.styleConfig.client.color }}><p className="font-bold text-lg mb-1 text-slate-900">{data.clientInfo.name}</p><p>{data.clientInfo.contactPerson}</p><p>{data.clientInfo.address}</p><p>{data.clientInfo.email}</p><p>{data.clientInfo.phone}</p><div className="mt-6 grid grid-cols-2 gap-4 text-sm"><div><span className="block text-xs text-slate-400">발행일 (DATE)</span><span className="font-medium tabular-nums text-slate-800">{formatSimpleDate(data.date)}</span></div><div><span className="block text-xs text-slate-400">만료일 (DUE DATE)</span><span className="font-medium tabular-nums text-slate-800">{formatSimpleDate(data.validUntil)}</span></div></div></div>
                             </ClickableArea>
                         </div>
-
                         <Spacing id="infoToTable" />
                     </>
-                ) : null}
-
+                )}
                 {items.length > 0 && (
                     <ClickableArea sectionId="form-section-items" className="block">
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-slate-50">
-                            <tr style={{ color: styleConfig.tableHeader.color, fontSize: `${styleConfig.tableHeader.fontSize}px` }}>
+                            <tr style={{ color: data.styleConfig.tableHeader.color, fontSize: `${data.styleConfig.tableHeader.fontSize}px` }}>
                                 <th className="py-3 px-4 font-bold w-1/2">항목</th>
                                 <th className="py-3 px-4 font-bold text-center w-24">M/M</th>
                                 <th className="py-3 px-4 font-bold text-right">단가</th>
@@ -664,394 +494,123 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
                             <tbody>
                             {items.map((item, idx) => (
                                 <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} style={getItemRowStyle(idx === items.length - 1)}>
-                                <td className="px-4 align-top" style={cellStyle}>
-                                    <p className="font-bold mb-1">{item.name}</p>
-                                    <p className="text-slate-500 opacity-80" style={{ fontSize: '0.9em' }}>{item.description}</p>
-                                </td>
-                                <td className="px-4 text-center align-top tabular-nums" style={cellStyle}>{item.quantity}</td>
-                                <td className="px-4 text-right align-top tabular-nums whitespace-nowrap" style={cellStyle}>{formatCurrency(item.price)}</td>
-                                <td className="px-4 text-right align-top font-bold tabular-nums whitespace-nowrap" style={cellStyle}>{formatCurrency(item.price * item.quantity)}</td>
+                                <td className="px-4 align-top" style={getItemCellStyle()}><p className="font-bold mb-1">{item.name}</p><p className="text-slate-500 opacity-80" style={{ fontSize: '0.9em' }}>{item.description}</p></td>
+                                <td className="px-4 text-center align-top tabular-nums" style={getItemCellStyle()}>{item.quantity}</td>
+                                <td className="px-4 text-right align-top tabular-nums whitespace-nowrap" style={getItemCellStyle()}>{formatCurrency(item.price)}</td>
+                                <td className="px-4 text-right align-top font-bold tabular-nums whitespace-nowrap" style={getItemCellStyle()}>{formatCurrency(item.price * item.quantity)}</td>
                                 </tr>
                             ))}
                             </tbody>
                         </table>
                     </ClickableArea>
                 )}
-
-                {getSectionData('totals') && (
-                    <>
-                        <Spacing id="tableToTotal" hidden={getSectionData('totals')?.skipSpacing} />
-                        <div className="flex justify-end mb-8">
-                            <ClickableArea sectionId="form-section-items" className="w-1/2 space-y-2 block">
-                                <div className="flex justify-between px-4 text-slate-500">
-                                    <span>소계</span>
-                                    <span className="tabular-nums">{formatCurrency(subtotal)}</span>
-                                </div>
-                                <div className="flex justify-between px-4 text-slate-500">
-                                    <span>부가세 (10%)</span>
-                                    <span className="tabular-nums">{formatCurrency(taxAmount)}</span>
-                                </div>
-                                {discountAmount > 0 && (
-                                    <div className="flex justify-between px-4 text-red-500">
-                                        <span>할인 금액</span>
-                                        <span className="tabular-nums">- {formatCurrency(discountAmount)}</span>
-                                    </div>
-                                )}
-                                <div className="flex justify-between px-4 py-3 text-white rounded font-bold text-lg mt-2 items-center" style={{ backgroundColor: styleConfig.modernHeaderColor || styleConfig.header.color }}>
-                                    <span>총계</span>
-                                    <span className="tabular-nums">{formatCurrency(total)}</span>
-                                </div>
-                            </ClickableArea>
-                        </div>
-                    </>
-                )}
-                {getSectionData('payment') && (
-                    <>
-                        <Spacing id="totalToPayment" hidden={getSectionData('payment')?.skipSpacing} />
-                        <PaymentSection />
-                    </>
-                )}
-                {getSectionData('notes') && (
-                    <>
-                        <Spacing id="paymentToNotes" hidden={getSectionData('notes')?.skipSpacing} />
-                        <NotesSection />
-                    </>
-                )}
-                {getSectionData('terms') && (
-                    <>
-                        <Spacing id="notesToTerms" hidden={getSectionData('terms')?.skipSpacing} />
-                        <TermsSection />
-                    </>
-                )}
-                
-                {getSectionData('signature') && (
-                    <>
-                        <Spacing id="termsToSignature" hidden={getSectionData('signature')?.skipSpacing} />
-                        <div className="text-right">
-                            <ClickableArea sectionId="form-section-supplier" className="inline-block">
-                                <SignatureBlock />
-                            </ClickableArea>
-                        </div>
-                    </>
-                )}
+                {getSectionData('totals') && <><Spacing id="tableToTotal" hidden={getSectionData('totals')?.skipSpacing} /><div className="flex justify-end mb-8"><ClickableArea sectionId="form-section-items" className="w-1/2 space-y-2 block"><div className="flex justify-between px-4 text-slate-500"><span>소계</span><span className="tabular-nums">{formatCurrency(subtotal)}</span></div><div className="flex justify-between px-4 text-slate-500"><span>부가세 (10%)</span><span className="tabular-nums">{formatCurrency(taxAmount)}</span></div>{discountAmount > 0 && <div className="flex justify-between px-4 text-red-500"><span>할인 금액</span><span className="tabular-nums">- {formatCurrency(discountAmount)}</span></div>}<div className="flex justify-between px-4 py-3 text-white rounded font-bold text-lg mt-2 items-center -webkit-print-color-adjust-exact" style={{ backgroundColor: data.styleConfig.modernHeaderColor || data.styleConfig.header.color }}><span>총계</span><span className="tabular-nums">{formatCurrency(total)}</span></div></ClickableArea></div></>}
+                {getSectionData('payment') && <><Spacing id="totalToPayment" hidden={getSectionData('payment')?.skipSpacing} /><PaymentSection /></>}
+                {getSectionData('notes') && <><Spacing id="paymentToNotes" hidden={getSectionData('notes')?.skipSpacing} /><NotesSection /></>}
+                {getSectionData('terms') && <><Spacing id="notesToTerms" hidden={getSectionData('terms')?.skipSpacing} /><TermsSection /></>}
+                {getSectionData('signature') && <><Spacing id="termsToSignature" hidden={getSectionData('signature')?.skipSpacing} /><div className="text-right"><ClickableArea sectionId="form-section-supplier" className="inline-block"><SignatureBlock /></ClickableArea></div></>}
             </div>
-            
-            <PageNumber current={chunk.pageNum} total={calculatePages(data).length} />
+            <PageNumber current={chunk.pageNum} total={pages.length} />
         </div>
       );
   }
 
   const LayoutClassic = ({ chunk }: { chunk: PageChunk }) => {
       const { items, footerSections, isFirst } = chunk;
-      const { styleConfig } = data;
-      const cellStyle = getItemCellStyle();
-      
       const borderColor = data.tableStyle.borderColor;
-
-      // Define th style with dynamic border color
-      const thStyle = {
-          border: `1px solid ${borderColor}`,
-          borderBottomWidth: `${data.tableStyle.headerBorderBottomWidth}px`,
-          color: styleConfig.tableHeader.color,
-          fontSize: `${styleConfig.tableHeader.fontSize}px`
-      };
-
-      // Define td style with dynamic border color
-      const tdStyle = {
-          ...cellStyle,
-          border: `1px solid ${borderColor}`,
-          borderBottomWidth: `${data.tableStyle.itemBorderBottomWidth}px`
-      };
-
-      // Find individual section data to check skipSpacing
+      const thStyle = { border: `1px solid ${borderColor}`, borderBottomWidth: `${data.tableStyle.headerBorderBottomWidth}px`, color: data.styleConfig.tableHeader.color, fontSize: `${data.styleConfig.tableHeader.fontSize}px` };
+      const tdStyle = { ...getItemCellStyle(), border: `1px solid ${borderColor}`, borderBottomWidth: `${data.tableStyle.itemBorderBottomWidth}px` };
       const getSectionData = (id: string) => footerSections.find(s => s.id === id);
-
       return (
         <div className="a4-page-export a4-page bg-white relative h-[297mm] overflow-hidden" style={ContainerStyle}>
             <MarginVisualizer margins={data.styleConfig.margins} show={data.styleConfig.showMarginGuides} />
-            <div className="h-full flex flex-col justify-between p-4 pb-[15mm] border-2 relative z-10" style={{ borderColor: styleConfig.header.color }}>
+            <div className="h-full flex flex-col justify-between p-4 pb-[15mm] border-2 relative z-10 overflow-hidden" style={{ borderColor: data.styleConfig.header.color }}>
                 <div className="flex-1">
-                    {isFirst ? (
+                    {isFirst && (
                         <>
-                            <ClickableArea sectionId="form-section-header" className="text-center border-b-2 pb-6 mb-6 block" style={{ borderColor: styleConfig.header.color }}>
-                                <h1 className="text-3xl font-serif font-bold tracking-widest underline decoration-double decoration-2 underline-offset-4" style={{ color: styleConfig.header.color }}>{data.title}</h1>
-                            </ClickableArea>
-
+                            <ClickableArea sectionId="form-section-header" className="text-center border-b-2 pb-6 mb-6 block" style={{ borderColor: data.styleConfig.header.color }}><h1 className="text-3xl font-serif font-bold tracking-widest underline decoration-double decoration-2 underline-offset-4" style={{ color: data.styleConfig.header.color }}>{data.title}</h1></ClickableArea>
                             <Spacing id="titleToInfo" />
-
                             <div className="flex justify-between gap-4">
                                 <div className="flex-1 border" style={{ borderColor }}>
                                     <div className="bg-slate-100 p-2 text-center font-bold border-b text-sm" style={{ borderColor }}>공급자</div>
-                                    <ClickableArea sectionId="form-section-supplier" className="p-4 text-sm space-y-1 relative block h-full" style={{ fontSize: `${styleConfig.supplier.fontSize}px`, color: styleConfig.supplier.color }}>
-                                        <div className="flex"><span className="w-20 text-slate-500">사업자번호</span><span>{data.myInfo.registrationNumber}</span></div>
-                                        <div className="flex"><span className="w-20 text-slate-500">상호</span><span>{data.myInfo.name}</span></div>
-                                        <div className="flex"><span className="w-20 text-slate-500">대표자</span><span>{data.myInfo.ceo}</span></div>
-                                        <div className="flex"><span className="w-20 text-slate-500">주소</span><span>{data.myInfo.address}</span></div>
-                                        <div className="flex"><span className="w-20 text-slate-500">연락처</span><span>{data.myInfo.phone}</span></div>
-                                        {data.seal && <img src={data.seal} alt="seal" className="absolute right-2 bottom-2 w-16 h-16 object-contain mix-blend-multiply opacity-80" />}
-                                    </ClickableArea>
+                                    <ClickableArea sectionId="form-section-supplier" className="p-4 text-sm space-y-1 relative block h-full" style={{ fontSize: `${data.styleConfig.supplier.fontSize}px`, color: data.styleConfig.supplier.color }}><div className="flex"><span className="w-20 text-slate-500">사업자번호</span><span>{data.myInfo.registrationNumber}</span></div><div className="flex"><span className="w-20 text-slate-500">상호</span><span>{data.myInfo.name}</span></div><div className="flex"><span className="w-20 text-slate-500">대표자</span><span>{data.myInfo.ceo}</span></div><div className="flex"><span className="w-20 text-slate-500">주소</span><span>{data.myInfo.address}</span></div><div className="flex"><span className="w-20 text-slate-500">연락처</span><span>{data.myInfo.phone}</span></div>{data.seal && <img src={data.seal} alt="seal" className="absolute right-2 bottom-2 w-16 h-16 object-contain mix-blend-multiply opacity-80" />}</ClickableArea>
                                 </div>
                                 <div className="flex-1 border" style={{ borderColor }}>
                                     <div className="bg-slate-100 p-2 text-center font-bold border-b text-sm" style={{ borderColor }}>청구/수신 (BILL TO)</div>
-                                    <ClickableArea sectionId="form-section-client" className="p-4 text-sm space-y-1 block h-full" style={{ fontSize: `${styleConfig.client.fontSize}px`, color: styleConfig.client.color }}>
-                                        <div className="flex"><span className="w-20 text-slate-500">상호명</span><span className="font-bold">{data.clientInfo.name}</span></div>
-                                        <div className="flex"><span className="w-20 text-slate-500">담당자</span><span>{data.clientInfo.contactPerson}</span></div>
-                                        <div className="flex"><span className="w-20 text-slate-500">연락처</span><span>{data.clientInfo.phone}</span></div>
-                                        <div className="flex"><span className="w-20 text-slate-500">이메일</span><span>{data.clientInfo.email}</span></div>
-                                    </ClickableArea>
+                                    <ClickableArea sectionId="form-section-client" className="p-4 text-sm space-y-1 block h-full" style={{ fontSize: `${data.styleConfig.client.fontSize}px`, color: data.styleConfig.client.color }}><div className="flex"><span className="w-20 text-slate-500">상호명</span><span className="font-bold">{data.clientInfo.name}</span></div><div className="flex"><span className="w-20 text-slate-500">담당자</span><span>{data.clientInfo.contactPerson}</span></div><div className="flex"><span className="w-20 text-slate-500">연락처</span><span>{data.clientInfo.phone}</span></div><div className="flex"><span className="w-20 text-slate-500">이메일</span><span>{data.clientInfo.email}</span></div></ClickableArea>
                                 </div>
                             </div>
-                            <ClickableArea sectionId="form-section-header" className="flex justify-between items-center px-2 text-sm mt-4">
-                                <div>견적번호 : <span className="font-medium">{data.estimateNumber}</span></div>
-                                <div>발행일 (DATE) : <span className="font-medium">{formatSimpleDate(data.date)}</span></div>
-                                <div>만료일 (DUE DATE) : <span className="font-medium">{formatSimpleDate(data.validUntil)}</span></div>
-                            </ClickableArea>
-
+                            <ClickableArea sectionId="form-section-header" className="flex justify-between items-center px-2 text-sm mt-4"><div>견적번호 : <span className="font-medium">{data.estimateNumber}</span></div><div>발행일 (DATE) : <span className="font-medium">{formatSimpleDate(data.date)}</span></div><div>만료일 (DUE DATE) : <span className="font-medium">{formatSimpleDate(data.validUntil)}</span></div></ClickableArea>
                             <Spacing id="infoToTable" />
                         </>
-                    ) : null}
-
+                    )}
                     {items.length > 0 && (
                         <ClickableArea sectionId="form-section-items" className="block">
                             <table className="w-full border-collapse border mb-6 text-sm" style={{ borderColor }}>
-                                <thead>
-                                    <tr className="bg-slate-100" style={{ color: styleConfig.tableHeader.color }}>
-                                        <th className="py-2 px-2 w-10 text-center" style={thStyle}>No</th>
-                                        <th className="py-2 px-2" style={thStyle}>항목</th>
-                                        <th className="py-2 px-2 w-16 text-center" style={thStyle}>M/M</th>
-                                        <th className="py-2 px-2 w-24 text-right" style={thStyle}>단가</th>
-                                        <th className="py-2 px-2 w-28 text-right" style={thStyle}>합계</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {items.map((item, idx) => (
-                                        <tr key={item.id} style={{ color: styleConfig.tableItem.color }}>
-                                            <td className="px-2 text-center" style={tdStyle}>{idx + 1}</td>
-                                            <td className="px-2" style={tdStyle}>
-                                                <div className="font-bold">{item.name}</div>
-                                                <div className="text-xs text-slate-500">{item.description}</div>
-                                            </td>
-                                            <td className="px-2 text-center" style={tdStyle}>{item.quantity}</td>
-                                            <td className="px-2 text-right tabular-nums whitespace-nowrap" style={tdStyle}>{formatCurrency(item.price)}</td>
-                                            <td className="px-2 text-right tabular-nums whitespace-nowrap" style={tdStyle}>{formatCurrency(item.price * item.quantity)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
+                                <thead><tr className="bg-slate-100" style={{ color: data.styleConfig.tableHeader.color }}><th className="py-2 px-2 w-10 text-center" style={thStyle}>No</th><th className="py-2 px-2" style={thStyle}>항목</th><th className="py-2 px-2 w-16 text-center" style={thStyle}>M/M</th><th className="py-2 px-2 w-24 text-right" style={thStyle}>단가</th><th className="py-2 px-2 w-28 text-right" style={thStyle}>합계</th></tr></thead>
+                                <tbody>{items.map((item, idx) => (<tr key={item.id} style={{ color: data.styleConfig.tableItem.color }}><td className="px-2 text-center" style={tdStyle}>{idx + 1}</td><td className="px-2" style={tdStyle}><div className="font-bold">{item.name}</div><div className="text-xs text-slate-500">{item.description}</div></td><td className="px-2 text-center" style={tdStyle}>{item.quantity}</td><td className="px-2 text-right tabular-nums whitespace-nowrap" style={tdStyle}>{formatCurrency(item.price)}</td><td className="px-2 text-right tabular-nums whitespace-nowrap" style={tdStyle}>{formatCurrency(item.price * item.quantity)}</td></tr>))}</tbody>
                             </table>
                         </ClickableArea>
                     )}
-                    
-                    {getSectionData('totals') && (
-                        <>
-                            <Spacing id="tableToTotal" hidden={getSectionData('totals')?.skipSpacing} />
-                            <ClickableArea sectionId="form-section-items" className="block">
-                                <table className="w-full border-collapse border mb-6 text-sm" style={{ marginTop: items.length > 0 ? '-1px' : '0', borderColor }}>
-                                    <tbody>
-                                        <tr style={{ color: styleConfig.tableItem.color }}>
-                                            <td className="border py-2 px-2 text-center bg-slate-50 font-bold w-[calc(100%-7rem)]" style={{ borderColor }}>총계</td>
-                                            <td className="border py-2 px-2 text-right font-bold text-lg tabular-nums bg-slate-50 whitespace-nowrap w-28" style={{ borderColor }}>{formatCurrency(total)}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </ClickableArea>
-                        </>
-                    )}
-
-                    {getSectionData('payment') && (
-                        <>
-                            <Spacing id="totalToPayment" hidden={getSectionData('payment')?.skipSpacing} />
-                            <PaymentSection />
-                        </>
-                    )}
-                    {getSectionData('notes') && (
-                        <>
-                            <Spacing id="paymentToNotes" hidden={getSectionData('notes')?.skipSpacing} />
-                            <NotesSection />
-                        </>
-                    )}
-                    {getSectionData('terms') && (
-                        <>
-                            <Spacing id="notesToTerms" hidden={getSectionData('terms')?.skipSpacing} />
-                            <TermsSection />
-                        </>
-                    )}
-
-                    {getSectionData('signature') && (
-                        <>
-                            <Spacing id="termsToSignature" hidden={getSectionData('signature')?.skipSpacing} />
-                            <div className="text-right">
-                                <ClickableArea sectionId="form-section-supplier" className="inline-block">
-                                    <SignatureBlock />
-                                </ClickableArea>
-                            </div>
-                        </>
-                    )}
+                    {getSectionData('totals') && <><Spacing id="tableToTotal" hidden={getSectionData('totals')?.skipSpacing} /><ClickableArea sectionId="form-section-items" className="block"><table className="w-full border-collapse border mb-6 text-sm" style={{ marginTop: items.length > 0 ? '-1px' : '0', borderColor }}><tbody><tr style={{ color: data.styleConfig.tableItem.color }}><td className="border py-2 px-2 text-center bg-slate-50 font-bold w-[calc(100%-7rem)]" style={{ borderColor }}>총계</td><td className="border py-2 px-2 text-right font-bold text-lg tabular-nums bg-slate-50 whitespace-nowrap w-28" style={{ borderColor }}>{formatCurrency(total)}</td></tr></tbody></table></ClickableArea></>}
+                    {getSectionData('payment') && <><Spacing id="totalToPayment" hidden={getSectionData('payment')?.skipSpacing} /><PaymentSection /></>}
+                    {getSectionData('notes') && <><Spacing id="paymentToNotes" hidden={getSectionData('notes')?.skipSpacing} /><NotesSection /></>}
+                    {getSectionData('terms') && <><Spacing id="notesToTerms" hidden={getSectionData('terms')?.skipSpacing} /><TermsSection /></>}
+                    {getSectionData('signature') && <><Spacing id="termsToSignature" hidden={getSectionData('signature')?.skipSpacing} /><div className="text-right"><ClickableArea sectionId="form-section-supplier" className="inline-block"><SignatureBlock /></ClickableArea></div></>}
                 </div>
             </div>
-            <PageNumber current={chunk.pageNum} total={calculatePages(data).length} />
+            <PageNumber current={chunk.pageNum} total={pages.length} />
         </div>
       );
   }
 
   const LayoutMinimal = ({ chunk }: { chunk: PageChunk }) => {
       const { items, footerSections, isFirst } = chunk;
-      const { styleConfig } = data;
-      const cellStyle = getItemCellStyle();
-
-      // Find individual section data to check skipSpacing
       const getSectionData = (id: string) => footerSections.find(s => s.id === id);
-
       return (
         <div className="a4-page-export a4-page bg-white relative flex flex-col h-[297mm] overflow-hidden" style={ContainerStyle}>
              <MarginVisualizer margins={data.styleConfig.margins} show={data.styleConfig.showMarginGuides} />
-             <div className="flex-1 relative z-10">
-                {isFirst ? (
+             <div className="flex-1 relative z-10 overflow-hidden">
+                {isFirst && (
                     <>
-                        <div className="flex justify-between items-end border-b-2 border-slate-900 pb-4">
-                            <ClickableArea sectionId="form-section-header">
-                                <h1 className="font-bold text-3xl tracking-tight" style={{ color: styleConfig.header.color }}>{data.title}</h1>
-                            </ClickableArea>
-                             <div className="text-right text-sm">
-                                <ClickableArea sectionId="form-section-supplier">
-                                    <div className="font-bold text-lg">{data.myInfo.name}</div>
-                                </ClickableArea>
-                             </div>
-                        </div>
-
+                        <div className="flex justify-between items-end border-b-2 border-slate-900 pb-4"><ClickableArea sectionId="form-section-header"><h1 className="font-bold text-3xl tracking-tight" style={{ color: data.styleConfig.header.color }}>{data.title}</h1></ClickableArea><div className="text-right text-sm"><ClickableArea sectionId="form-section-supplier"><div className="font-bold text-lg">{data.myInfo.name}</div></ClickableArea></div></div>
                         <Spacing id="titleToMeta" />
-
-                        <ClickableArea sectionId="form-section-header" className="grid grid-cols-3 gap-8 text-sm text-slate-600 mb-8">
-                            <div>
-                                <span className="block text-xs font-bold text-slate-400 uppercase">Estimate No.</span>
-                                <span className="font-mono text-slate-900">{data.estimateNumber}</span>
-                            </div>
-                            <div>
-                                <span className="block text-xs font-bold text-slate-400 uppercase">Date</span>
-                                <span>{formatSimpleDate(data.date)}</span>
-                            </div>
-                            <div>
-                                <span className="block text-xs font-bold text-slate-400 uppercase">Valid Until</span>
-                                <span>{formatSimpleDate(data.validUntil)}</span>
-                            </div>
-                        </ClickableArea>
-                        
+                        <ClickableArea sectionId="form-section-header" className="grid grid-cols-3 gap-8 text-sm text-slate-600 mb-6"><div><span className="block text-xs font-bold text-slate-400 uppercase mb-1">Estimate No.</span><span className="font-mono text-slate-900">{data.estimateNumber}</span></div><div><span className="block text-xs font-bold text-slate-400 uppercase mb-1">Date</span><span className="text-slate-900">{formatSimpleDate(data.date)}</span></div><div><span className="block text-xs font-bold text-slate-400 uppercase mb-1">Valid Until</span><span className="text-slate-900">{formatSimpleDate(data.validUntil)}</span></div></ClickableArea>
                         <Spacing id="metaToInfo" />
-
                         <div className="grid grid-cols-2 gap-8 text-sm">
-                            <ClickableArea sectionId="form-section-supplier">
-                                <div className="text-xs font-bold text-slate-400 uppercase mb-2">From</div>
-                                <div style={{ fontSize: `${styleConfig.supplier.fontSize}px`, color: styleConfig.supplier.color }}>
-                                    <p className="font-bold text-slate-900">{data.myInfo.name}</p>
-                                    <p>{data.myInfo.ceo}</p>
-                                    <p>{data.myInfo.address}</p>
-                                    <p>{data.myInfo.email}</p>
-                                    <p>{data.myInfo.phone}</p>
-                                </div>
-                            </ClickableArea>
-                            <ClickableArea sectionId="form-section-client">
-                                <div className="text-xs font-bold text-slate-400 uppercase mb-2">To</div>
-                                <div style={{ fontSize: `${styleConfig.client.fontSize}px`, color: styleConfig.client.color }}>
-                                    <p className="font-bold text-slate-900">{data.clientInfo.name}</p>
-                                    <p>{data.clientInfo.contactPerson}</p>
-                                    <p>{data.clientInfo.address}</p>
-                                    <p>{data.clientInfo.email}</p>
-                                    <p>{data.clientInfo.phone}</p>
-                                </div>
-                            </ClickableArea>
+                            <ClickableArea sectionId="form-section-supplier"><div className="text-xs font-bold text-slate-400 uppercase mb-2 border-b border-slate-100 pb-1">From</div><div style={{ fontSize: `${data.styleConfig.supplier.fontSize}px`, color: data.styleConfig.supplier.color }}><p className="font-bold text-slate-900">{data.myInfo.name}</p><p>{data.myInfo.ceo}</p><p>{data.myInfo.address}</p><p>{data.myInfo.email}</p><p>{data.myInfo.phone}</p></div></ClickableArea>
+                            <ClickableArea sectionId="form-section-client"><div className="text-xs font-bold text-slate-400 uppercase mb-2 border-b border-slate-100 pb-1">To</div><div style={{ fontSize: `${data.styleConfig.client.fontSize}px`, color: data.styleConfig.client.color }}><p className="font-bold text-slate-900">{data.clientInfo.name}</p><p>{data.clientInfo.contactPerson}</p><p>{data.clientInfo.address}</p><p>{data.clientInfo.email}</p><p>{data.clientInfo.phone}</p></div></ClickableArea>
                         </div>
-
                         <Spacing id="infoToTable" />
                     </>
-                ) : null}
-
+                )}
                 {items.length > 0 && (
                     <ClickableArea sectionId="form-section-items" className="block">
                         <table className="w-full text-left">
-                            <thead>
-                                <tr style={{
-                                    borderBottomWidth: `${data.tableStyle.headerBorderBottomWidth}px`,
-                                    borderBottomColor: data.tableStyle.borderColor,
-                                    color: styleConfig.tableHeader.color
-                                }}>
-                                    <th className="py-2 font-medium text-xs uppercase tracking-wider w-1/2">Item</th>
-                                    <th className="py-2 font-medium text-xs uppercase tracking-wider text-center w-24">Qty</th>
-                                    <th className="py-2 font-medium text-xs uppercase tracking-wider text-right">Price</th>
-                                    <th className="py-2 font-medium text-xs uppercase tracking-wider text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {items.map((item, idx) => (
-                                    <tr key={item.id} style={getItemRowStyle(idx === items.length - 1)}>
-                                        <td className="py-3 pr-4 align-top" style={cellStyle}>
-                                            <p className="font-medium text-slate-900">{item.name}</p>
-                                            <p className="text-slate-500 text-xs mt-0.5">{item.description}</p>
-                                        </td>
-                                        <td className="py-3 text-center align-top tabular-nums text-slate-600" style={cellStyle}>{item.quantity}</td>
-                                        <td className="py-3 text-right align-top tabular-nums text-slate-600" style={cellStyle}>{formatCurrency(item.price)}</td>
-                                        <td className="py-3 text-right align-top font-medium tabular-nums text-slate-900" style={cellStyle}>{formatCurrency(item.price * item.quantity)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
+                            <thead><tr style={{ borderBottomWidth: `${data.tableStyle.headerBorderBottomWidth}px`, borderBottomColor: data.tableStyle.borderColor, color: data.styleConfig.tableHeader.color }}><th className="py-2 font-medium text-xs uppercase tracking-wider w-1/2">Item</th><th className="py-2 font-medium text-xs uppercase tracking-wider text-center w-24">Qty</th><th className="py-2 font-medium text-xs uppercase tracking-wider text-right">Price</th><th className="py-2 font-medium text-xs uppercase tracking-wider text-right">Amount</th></tr></thead>
+                            <tbody className="divide-y divide-slate-100">{items.map((item, idx) => (<tr key={item.id} style={getItemRowStyle(idx === items.length - 1)}><td className="py-3 pr-4 align-top" style={getItemCellStyle()}><p className="font-medium text-slate-900">{item.name}</p><p className="text-slate-500 text-xs mt-0.5">{item.description}</p></td><td className="py-3 text-center align-top tabular-nums text-slate-600" style={getItemCellStyle()}>{item.quantity}</td><td className="py-3 text-right align-top tabular-nums text-slate-600" style={getItemCellStyle()}>{formatCurrency(item.price)}</td><td className="py-3 text-right align-top font-medium tabular-nums text-slate-900" style={getItemCellStyle()}>{formatCurrency(item.price * item.quantity)}</td></tr>))}</tbody>
                         </table>
                     </ClickableArea>
                 )}
-
-                {getSectionData('totals') && (
-                      <>
-                        <Spacing id="tableToTotal" hidden={getSectionData('totals')?.skipSpacing} />
-                        <div className="flex justify-end mt-4">
-                            <div className="w-1/2">
-                                <TotalsSection widthClass="w-full" />
-                            </div>
-                        </div>
-                      </>
-                  )}
-                  {getSectionData('payment') && (
-                      <>
-                        <Spacing id="totalToPayment" hidden={getSectionData('payment')?.skipSpacing} />
-                        <PaymentSection />
-                      </>
-                  )}
-                  {getSectionData('notes') && (
-                      <>
-                        <Spacing id="paymentToNotes" hidden={getSectionData('notes')?.skipSpacing} />
-                        <NotesSection />
-                      </>
-                  )}
-                  {getSectionData('terms') && (
-                      <>
-                        <Spacing id="notesToTerms" hidden={getSectionData('terms')?.skipSpacing} />
-                        <TermsSection />
-                      </>
-                  )}
-                  
-                  {getSectionData('signature') && (
-                    <>
-                        <Spacing id="termsToSignature" hidden={getSectionData('signature')?.skipSpacing} />
-                        <div>
-                            <ClickableArea sectionId="form-section-supplier" className="flex items-center justify-end">
-                                {/*  <div className="text-sm font-bold">{data.myInfo.name}</div> */}
-                                <SignatureBlock />
-                            </ClickableArea>
-                        </div>
-                    </>
-                  )}
+                {getSectionData('totals') && <><Spacing id="tableToTotal" hidden={getSectionData('totals')?.skipSpacing} /><div className="flex justify-end mt-4"><div className="w-1/2"><TotalsSection widthClass="w-full" /></div></div></>}
+                {getSectionData('payment') && <><Spacing id="totalToPayment" hidden={getSectionData('payment')?.skipSpacing} /><PaymentSection /></>}
+                {getSectionData('notes') && <><Spacing id="paymentToNotes" hidden={getSectionData('notes')?.skipSpacing} /><NotesSection /></>}
+                {getSectionData('terms') && <><Spacing id="notesToTerms" hidden={getSectionData('terms')?.skipSpacing} /><TermsSection /></>}
+                {getSectionData('signature') && <><Spacing id="termsToSignature" hidden={getSectionData('signature')?.skipSpacing} /><div><ClickableArea sectionId="form-section-supplier" className="flex items-center justify-end"><SignatureBlock /></ClickableArea></div></>}
              </div>
-             <PageNumber current={chunk.pageNum} total={calculatePages(data).length} />
+             <PageNumber current={chunk.pageNum} total={pages.length} />
         </div>
       );
   }
 
   return (
-    <div className="flex flex-col gap-8 items-center print:block print:gap-0">
+    <div className="flex flex-col gap-8 items-center print:block print:gap-0 print:m-0 print:p-0">
         {pages.map((chunk, idx) => (
             <React.Fragment key={idx}>
                 {data.layout === 'default' && <LayoutDefault chunk={chunk} />}
                 {data.layout === 'modern' && <LayoutModern chunk={chunk} />}
                 {data.layout === 'classic' && <LayoutClassic chunk={chunk} />}
                 {data.layout === 'minimal' && <LayoutMinimal chunk={chunk} />}
-                {/* Spacer only for screen view */}
-                <div className="h-0 w-full print:hidden"></div>
             </React.Fragment>
         ))}
     </div>
