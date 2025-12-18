@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       assetsDir: 'assets',
+      chunkSizeWarningLimit: 1600
     }
   };
 });
