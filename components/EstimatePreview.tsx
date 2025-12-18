@@ -189,19 +189,32 @@ const MarginVisualizer = ({ margins, show }: { margins: Margins, show: boolean }
 const SpacingGuide = ({ height, show, hidden = false }: { height: number, show: boolean, hidden?: boolean }) => {
     if (hidden || height <= 0) return null;
     
-    const style: React.CSSProperties = {
+    // 이 컨테이너는 인쇄/PDF 시에도 높이를 유지해야 함 (실제 간격 역할)
+    const containerStyle: React.CSSProperties = {
         height: `${height}px`,
         width: '100%',
-        background: show ? 'repeating-linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0px, rgba(59, 130, 246, 0.1) 4px, transparent 4px, transparent 8px)' : undefined,
-        borderTop: show ? '1px dashed rgba(59, 130, 246, 0.2)' : undefined,
-        borderBottom: show ? '1px dashed rgba(59, 130, 246, 0.2)' : undefined,
-        pointerEvents: 'none',
+        position: 'relative',
         display: 'block',
-        marginTop: 0,
-        marginBottom: 0,
     };
 
-    return <div style={style} className="print:hidden spacing-guide" data-html2canvas-ignore="true" />;
+    // 가이드 비주얼 요소 (인쇄/PDF 시 제외)
+    const visualStyle: React.CSSProperties = {
+        background: 'repeating-linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0px, rgba(59, 130, 246, 0.1) 4px, transparent 4px, transparent 8px)',
+        borderTop: '1px dashed rgba(59, 130, 246, 0.2)',
+        borderBottom: '1px dashed rgba(59, 130, 246, 0.2)',
+    };
+
+    return (
+        <div style={containerStyle}>
+            {show && (
+                <div 
+                    className="absolute inset-0 pointer-events-none print:hidden" 
+                    data-html2canvas-ignore="true"
+                    style={visualStyle}
+                />
+            )}
+        </div>
+    );
 };
 
 export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectionClick }) => {
@@ -286,7 +299,7 @@ export const EstimatePreview: React.FC<EstimatePreviewProps> = ({ data, onSectio
       const padding = data.tableStyle.rowPadding ?? 16;
       return (
           <div 
-             className="absolute inset-0 pointer-events-none print:hidden spacing-guide" 
+             className="absolute inset-0 pointer-events-none print:hidden" 
              data-html2canvas-ignore="true"
              style={{ 
                  background: `linear-gradient(to bottom, rgba(59, 130, 246, 0.1) ${padding}px, transparent ${padding}px, transparent calc(100% - ${padding}px), rgba(59, 130, 246, 0.1) calc(100% - ${padding}px))` 
